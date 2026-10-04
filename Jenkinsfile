@@ -1,5 +1,12 @@
 pipeline {
     agent any
+    environment {
+        IMAGE_NAME =${{ vars.NAME }}/spring-boot-java
+        IMAGE_TAG = "${2.0}"
+    }
+    tools{
+        maven 'maven:3.10.0'
+    }
 
     stages {
 
@@ -27,12 +34,12 @@ pipeline {
         
       stage(' docker build'){
           steps{
-              sh 'docker build -t spring-java:latest .'}
+              sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .'}
       }
       stage('image deploy'){
          steps{
-            sh 'docker rm -f spring-java || true'
-            sh 'docker run -d -p 8000:8000 --name spring-java spring-java:latest'
+            sh 'docker rm -f ${IMAGE_NAME} || true'
+            sh 'docker run -d -p 8000:8000 --name spring-java ${IMAGE_NAME}:${IMAGE_TAG}'
             }
         }
         stage('check image'){
