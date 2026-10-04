@@ -37,6 +37,23 @@ pipeline {
               sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .'}
               sh 'docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest'
       }
+        stage('docker login'){
+            steps{
+                 withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-creds',
+                        usernameVariable: 'DOCKER_USERNAME',
+                passwordVariable: 'DOCKER_PASSWORD'
+            )
+        ]) {
+            sh '''
+                echo "$DOCKER_PASSWORD" | docker login \
+                -u "$DOCKER_USERNAME" \
+                --password-stdin
+            '''
+        }
+    }
+}
       stage('image deploy'){
          steps{
             sh 'docker rm -f ${IMAGE_NAME} || true'
