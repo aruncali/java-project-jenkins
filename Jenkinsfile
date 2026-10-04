@@ -20,6 +20,11 @@ pipeline {
                 sh 'mvn test'
             }
         }
+        stage('Archive JAR') { 
+            steps { 
+                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true } 
+             }
+        }
     }
 
     post {
