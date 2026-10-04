@@ -16,6 +16,7 @@ pipeline {
          sh 'mvn test' 
             } 
          }
+}
 post {
   success { 
     echo 'Spring Boot CI pipeline completed successfully!' 
