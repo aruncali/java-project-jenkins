@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        IMAGE_NAME =${{ vars.NAME }}/spring-boot-java
+        IMAGE_NAME ="${{ vars.NAME }}/spring-boot-java"
         IMAGE_TAG = "${2.0}"
     }
     tools{
