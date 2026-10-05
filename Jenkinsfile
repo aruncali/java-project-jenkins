@@ -4,7 +4,6 @@ pipeline {
     environment {
         IMAGE_NAME = "arunubuntu/spring-boot-java"
         IMAGE_TAG  = "${BUILD_NUMBER}"
-        EC2_HOST = "18.234.149.71"
     }
 
     tools {
@@ -44,7 +43,7 @@ pipeline {
             }
         }
 
-        stage('Docker Push') {
+        stage('Docker Login') {
             steps {
                 withCredentials([
                     usernamePassword(
@@ -57,42 +56,30 @@ pipeline {
                         echo "$DOCKER_PASSWORD" | docker login \
                         -u "$DOCKER_USERNAME" \
                         --password-stdin
-
-                        docker push ${IMAGE_NAME}:${IMAGE_TAG}
-                        docker push ${IMAGE_NAME}:latest
-
-                        docker logout
                     '''
                 }
             }
         }
 
-        stage('Deploy to EC2') {
+        stage('Docker Push') {
             steps {
-                sshagent(['ec2-ssh']) {
-                    sh '''
-                        ssh -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} "
-                            docker pull ${IMAGE_NAME}:${IMAGE_TAG} &&
-                            docker rm -f spring-boot-app || true &&
-                            docker run -d \
-                                --name spring-boot-app \
-                                -p 8081:8080 \
-                                ${IMAGE_NAME}:${IMAGE_TAG}
-                        "
-                    '''
-                }
+                sh 'docker push ${IMAGE_NAME}:${IMAGE_TAG}'
+                sh 'docker push ${IMAGE_NAME}:latest'
             }
         }
 
-        stage('Verify Deployment') {
+        stage('Image Deploy') {
             steps {
-                sshagent(['ec2-ssh']) {
-                    sh '''
-                        ssh -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} "
-                            docker ps
-                        "
-                    '''
-                }
+                sh 'docker rm -f spring-java || true'
+                sh 'docker pull ${IMAGE_NAME}:${IMAGE_TAG}'
+                sh 'docker run -d -p 8000:8080 --name spring-java ${IMAGE_NAME}:${IMAGE_TAG}'
+            }
+        }
+
+        stage('Check Image') {
+            steps {
+                sh 'docker ps'
+                sh 'docker images'
             }
         }
     }
