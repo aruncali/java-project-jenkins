@@ -23,20 +23,7 @@ pipeline {
                 sh 'mvn clean package '
             }
         }
-      stage('Check Files') {
-        steps {
-        sh '''
-            pwd
-            echo "========== ROOT =========="
-            ls -lah
-            echo "========== JAR =========="
-            find . -name "*.jar" -type f
-            echo "========== DOCKERIGNORE =========="
-            cat .dockerignore 2>/dev/null || echo "No .dockerignore"
-        '''
-    }
-}
-        stage('Test') {
+    
             steps {
                 sh 'mvn test'
             }
