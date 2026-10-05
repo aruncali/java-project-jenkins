@@ -1,11 +1,14 @@
+```groovy
 pipeline {
     agent any
+
     environment {
-        IMAGE_NAME ="${ vars.NAME }/spring-boot-java"
-        IMAGE_TAG = "${2.0}"
+        IMAGE_NAME = "arunubuntu/spring-boot-java"
+        IMAGE_TAG = "${BUILD_NUMBER}"
     }
-    tools{
-        maven 'maven:3.10.0'
+
+    tools {
+        maven 'maven-3.10.0'
     }
 
     stages {
@@ -18,7 +21,7 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'mvn clean package'
+                sh 'mvn clean package -DskipTests'
             }
         }
 
@@ -27,49 +30,65 @@ pipeline {
                 sh 'mvn test'
             }
         }
-        stage('Archive JAR') { 
-            steps { 
-                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true } 
-             }
-        
-      stage(' docker build'){
-          steps{
-              sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .'}
-              sh 'docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest'
-      }
-        stage('docker login'){
-            steps{
-                 withCredentials([
-                    usernamePassword(
-                        credentialsId: 'dockerhub-creds',
-                        usernameVariable: '${ vars.DOCKER_USERNAME }',
-                passwordVariable: '${ secrets.DOCKER_PASSWORD }'
-            )
-        ]) {
-            sh '''
-                echo "$DOCKER_PASSWORD" | docker login \
-                -u "$DOCKER_USERNAME" \
-                --password-stdin
-            '''
-        }
-    }
-}
-      stage('image deploy'){
-         steps{
-            sh 'docker rm -f ${IMAGE_NAME} || true'
-            sh 'docker run -d -p 8000:8000 --name spring-java ${IMAGE_NAME}:${IMAGE_TAG}'
+
+        stage('Archive JAR') {
+            steps {
+                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
             }
         }
-        stage('check image'){
-            steps{
+
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
+                sh 'docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest'
+            }
+        }
+
+        stage('Docker Login') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-creds',
+                        usernameVariable: 'DOCKER_USERNAME',
+                        passwordVariable: 'DOCKER_PASSWORD'
+                    )
+                ]) {
+                    sh '''
+                        echo "$DOCKER_PASSWORD" | docker login \
+                        -u "$DOCKER_USERNAME" \
+                        --password-stdin
+                    '''
+                }
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                sh 'docker push ${IMAGE_NAME}:${IMAGE_TAG}'
+                sh 'docker push ${IMAGE_NAME}:latest'
+            }
+        }
+
+        stage('Image Deploy') {
+            steps {
+                sh 'docker rm -f spring-java || true'
+                sh 'docker pull ${IMAGE_NAME}:${IMAGE_TAG}'
+                sh 'docker run -d -p 8000:8080 --name spring-java ${IMAGE_NAME}:${IMAGE_TAG}'
+            }
+        }
+
+        stage('Check Image') {
+            steps {
                 sh 'docker ps'
                 sh 'docker images'
             }
         }
     }
+
     post {
         success {
-            echo 'Spring Boot CI pipeline completed successfully!'
+            echo 'Spring Boot CI/CD pipeline completed successfully!'
+            echo 'Application: http://localhost:8000'
         }
 
         failure {
@@ -77,3 +96,4 @@ pipeline {
         }
     }
 }
+```
