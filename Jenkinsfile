@@ -20,7 +20,12 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'mvn clean package -DskipTests'
+                sh 'mvn clean package '
+            }
+        }
+        stage('check jar'){
+            steps{
+                sh 'ls -lah target/'
             }
         }
 
