@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         IMAGE_NAME = "arunubuntu/spring-boot-java"
-        IMAGE_TAG = "${BUILD_NUMBER}"
+        IMAGE_TAG  = "${BUILD_NUMBER}"
     }
 
     tools {
@@ -20,10 +20,11 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'mvn clean package '
+                sh 'mvn clean package'
             }
         }
-    
+
+        stage('Test') {
             steps {
                 sh 'mvn test'
             }
